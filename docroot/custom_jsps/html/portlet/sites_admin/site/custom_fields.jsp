@@ -7,13 +7,14 @@
 </liferay-util:buffer>
 
 <%=original %>
+
 <div class="portlet-msg-info">
-<h3>
-<liferay-ui:message key="customNavigationSites-help-headline"></liferay-ui:message>
-</h3>
-<p>
-	<liferay-ui:message arguments="<%=themeDisplay.getScopeGroupId()%>" key="customNavigationSites-help-text-paragraph1-x"></liferay-ui:message>
-</p><p>
-	<liferay-ui:message arguments="<%=themeDisplay.getScopeGroupId()%>" key="customNavigationSites-help-text-paragraph2-x"></liferay-ui:message>
-</p>
+	<h3>
+		<liferay-ui:message key="customNavigationSites-help-headline"></liferay-ui:message>
+	</h3>
+	<p>
+		<liferay-ui:message arguments="<%=themeDisplay.getScopeGroupId()%>" key="customNavigationSites-help-text-paragraph1-x"></liferay-ui:message>
+	</p><p>
+		<liferay-ui:message arguments="<%=themeDisplay.getScopeGroupId()%>" key="customNavigationSites-help-text-paragraph2-x"></liferay-ui:message>
+	</p>
 </div>

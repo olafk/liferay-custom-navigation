@@ -4,6 +4,7 @@ import com.liferay.portal.kernel.events.Action;
 import com.liferay.portal.kernel.events.ActionException;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.service.LayoutServiceUtil;
@@ -26,39 +27,25 @@ public class CustomNavigationPreAction extends Action {
 
 	public void run(HttpServletRequest request, HttpServletResponse response) throws ActionException {
 		try {
-//			Map<String, Object> vmVariables = new HashMap<String, Object>();
-	
 			ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
-	
 			final long scopeGroupId = themeDisplay.getScopeGroupId();
 			ExpandoColumn column = ExpandoNavigationUtil.getNavigationColumn(themeDisplay.getCompanyId());
+
 			try {
 				ExpandoValue value = ExpandoValueLocalServiceUtil.getValue(column.getTableId(), column.getColumnId(), scopeGroupId);
-				long[] groupIds = value.getLongArray();
-				if(groupIds != null 
-						&& !(groupIds.length == 1 && groupIds[0] != scopeGroupId) 
-						&&  (groupIds[0] != 0L)) {
-					List<Layout> originalLayouts = themeDisplay.getLayouts();
+				String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
+				List<GroupConfig> decodedGroups = ConfigurationUtil.decode(groupIds);
+				if((decodedGroups.size() > 1 && decodedGroups.get(0).getGroupId() != scopeGroupId)) {
 					LinkedList<Layout> layouts = new LinkedList<Layout>();
 
-					boolean hadCurrentGroupId = false;
-					boolean isPrivateLayoutSet = themeDisplay.getLayoutSet().isPrivateLayout();
-
-					for(long groupId:groupIds) {
-						hadCurrentGroupId |= (groupId == scopeGroupId);
-						layouts.addAll(LayoutServiceUtil.getLayouts(groupId, isPrivateLayoutSet, 0L)); // public (false), toplevel pages (0L)
-					}
-					if(!hadCurrentGroupId) {
-						layouts.addAll(0, originalLayouts);
+					for(GroupConfig groupConfig:decodedGroups) {
+						layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
 					}
 					themeDisplay.setLayouts(layouts);
 				}
 			} catch (NoSuchValueException e) {
 				// fine - don't do any special treatment
 			}
-//			List<Layout> layouts = Collections.EMPTY_LIST;
-//			layouts = LayoutLocalServiceUtil.getLayouts(17702, false, 0L);
-//			layouts.addAll(layouts);		
 		} catch (PortalException e1) {
 			e1.printStackTrace();
 		} catch (SystemException e1) {

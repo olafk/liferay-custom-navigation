@@ -38,7 +38,7 @@ public class ExpandoNavigationUtil {
 		String name = CustomNavigationKeys.GROUP_IDS;
 		try {
 			ExpandoColumn column = ExpandoColumnLocalServiceUtil.addColumn(
-				tableId, name, ExpandoColumnConstants.LONG_ARRAY);
+				tableId, name, ExpandoColumnConstants.STRING_ARRAY);
 		
 			// Add Unicode Properties
 		
@@ -46,7 +46,7 @@ public class ExpandoNavigationUtil {
 			properties.setProperty(
 					ExpandoColumnConstants.INDEX_TYPE, Boolean.FALSE.toString());
 			column.setTypeSettingsProperties(properties);
-			column.setDefaultData("0");
+			column.setDefaultData("unconfigured");
 			ExpandoColumnLocalServiceUtil.updateExpandoColumn(column);
 			return column;
 		}
