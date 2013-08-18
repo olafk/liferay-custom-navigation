@@ -2,15 +2,23 @@ package de.olafkock.liferay.navigation;
 
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.model.Group;
+import com.liferay.portal.model.Layout;
+import com.liferay.portal.service.LayoutServiceUtil;
 import com.liferay.portlet.expando.DuplicateColumnNameException;
 import com.liferay.portlet.expando.DuplicateTableNameException;
 import com.liferay.portlet.expando.model.ExpandoColumn;
 import com.liferay.portlet.expando.model.ExpandoColumnConstants;
 import com.liferay.portlet.expando.model.ExpandoTable;
+import com.liferay.portlet.expando.model.ExpandoValue;
 import com.liferay.portlet.expando.service.ExpandoColumnLocalServiceUtil;
 import com.liferay.portlet.expando.service.ExpandoTableLocalServiceUtil;
+import com.liferay.portlet.expando.service.ExpandoValueLocalServiceUtil;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class ExpandoNavigationUtil {
 	/***
@@ -54,6 +62,22 @@ public class ExpandoNavigationUtil {
 			return ExpandoColumnLocalServiceUtil.getColumn(
 					tableId, name);
 		}
+	}
+
+
+	public static LinkedList<Layout> getLayouts(final long scopeGroupId,
+			long companyId) throws PortalException, SystemException {
+		ExpandoColumn column = getNavigationColumn(companyId);
+		ExpandoValue value = ExpandoValueLocalServiceUtil.getValue(column.getTableId(), column.getColumnId(), scopeGroupId);
+		String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
+		List<GroupConfig> decodedGroups = ConfigurationUtil.decode(groupIds);
+		LinkedList<Layout> layouts = new LinkedList<Layout>();
+		if((decodedGroups.size() > 1 )) { 
+			for(GroupConfig groupConfig:decodedGroups) {
+				layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
+			}
+		}
+		return layouts;
 	}
 
 }
