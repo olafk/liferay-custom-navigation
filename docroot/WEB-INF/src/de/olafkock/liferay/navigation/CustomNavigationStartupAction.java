@@ -24,7 +24,8 @@ public class CustomNavigationStartupAction extends SimpleAction {
 		try {
 			List<Company> companies = CompanyLocalServiceUtil.getCompanies();
 			for(Company company: companies) {
-				ExpandoNavigationUtil.getNavigationColumn(company.getCompanyId());
+				ExpandoNavigationUtil.getNavigationColumn(true,  company.getCompanyId());
+				ExpandoNavigationUtil.getNavigationColumn(false, company.getCompanyId());
 			}
 		} catch (SystemException e) {
 			throw new ActionException(e);

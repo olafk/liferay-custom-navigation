@@ -41,9 +41,11 @@ public class ExpandoNavigationUtil {
 	}
 
 	
-	public static ExpandoColumn getNavigationColumn(long companyId) throws PortalException, SystemException {
+	public static ExpandoColumn getNavigationColumn(boolean publicLayouts, long companyId) throws PortalException, SystemException {
 		long tableId = getGroupExpandoTable(companyId).getTableId();
-		String name = CustomNavigationKeys.GROUP_IDS;
+		String name = publicLayouts ? 
+				CustomNavigationKeys.PUBLIC_GROUP_IDS : 
+				CustomNavigationKeys.PRIVATE_GROUP_IDS;
 		try {
 			ExpandoColumn column = ExpandoColumnLocalServiceUtil.addColumn(
 				tableId, name, ExpandoColumnConstants.STRING_ARRAY);
@@ -66,15 +68,17 @@ public class ExpandoNavigationUtil {
 
 
 	public static LinkedList<Layout> getLayouts(final long scopeGroupId,
-			long companyId) throws PortalException, SystemException {
-		ExpandoColumn column = getNavigationColumn(companyId);
-		ExpandoValue value = ExpandoValueLocalServiceUtil.getValue(column.getTableId(), column.getColumnId(), scopeGroupId);
-		String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
-		List<GroupConfig> decodedGroups = ConfigurationUtil.decode(groupIds);
+			boolean publicLayout, long companyId) throws PortalException, SystemException {
 		LinkedList<Layout> layouts = new LinkedList<Layout>();
-		if((decodedGroups.size() > 1 )) { 
-			for(GroupConfig groupConfig:decodedGroups) {
-				layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
+		ExpandoColumn column = getNavigationColumn(publicLayout, companyId);
+		ExpandoValue value = ExpandoValueLocalServiceUtil.getValue(column.getTableId(), column.getColumnId(), scopeGroupId);
+		if(value != null) {
+			String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
+			List<GroupConfig> decodedGroups = ConfigurationUtil.decode(groupIds);
+			if((decodedGroups.size() > 1 )) { 
+				for(GroupConfig groupConfig:decodedGroups) {
+					layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
+				}
 			}
 		}
 		return layouts;
