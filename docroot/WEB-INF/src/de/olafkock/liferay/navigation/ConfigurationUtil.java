@@ -5,6 +5,17 @@ import com.liferay.portal.kernel.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Note: This code is copied into the navigation portlet jsp, as that jsp
+ * will run in portal classloader and can't access this implementation.
+ * 
+ * Any changes here should be made in 
+ * custom_jsps/html/portlet/navigation/view.jsp as well.
+ * 
+ * @author Olaf Kock
+ *
+ */
+
 public class ConfigurationUtil {
 
 	public static List<GroupConfig> decode(String[] strings) {
