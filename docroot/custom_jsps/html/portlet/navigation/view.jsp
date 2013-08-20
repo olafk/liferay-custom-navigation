@@ -14,6 +14,7 @@
  */
 --%>
 
+<%@page import="javax.sound.midi.SysexMessage"%>
 <%@page import="java.util.LinkedList"%>
 <%@page import="com.liferay.portal.service.LayoutServiceUtil"%>
 <%@page import="com.liferay.portal.kernel.util.StringUtil"%>
@@ -29,6 +30,15 @@
 <%@page import="com.liferay.portlet.expando.service.ExpandoTableLocalServiceUtil"%>
 <%@page import="com.liferay.portlet.expando.model.ExpandoTable"%>
 <%@ include file="/html/portlet/navigation/init.jsp" %>
+
+<%-- This page implements the original liferay-ui:navigation tag with the
+     changes that are required to render the modified navigation introduced
+     by this plugin.
+     
+     The code more or less is taken from that tag implementation and adapted
+     where needed.
+--%>
+
 <%
 boolean preview = PrefsParamUtil.getBoolean(portletPreferences, renderRequest, "preview");
 
@@ -120,7 +130,12 @@ private void _buildNavigation(Layout rootLayout, Layout selLayout, List<Layout> 
 		childLayouts = rootLayout.getChildren(themeDisplay.getPermissionChecker());
 	}
 	else {
-		childLayouts = getLayouts(selLayout.getGroupId(), selLayout.getCompanyId());
+		try {
+			childLayouts = getLayouts(selLayout.getGroupId(), selLayout.isPublicLayout(), selLayout.getCompanyId());
+		} catch (Exception e) {
+			System.err.println("ignoring " + e.getClass().getName() + " on page " + themeDisplay.getURLCurrent() );
+			e.printStackTrace();
+		}
 		if(childLayouts.isEmpty()) {
 			childLayouts = LayoutLocalServiceUtil.getLayouts(selLayout.getGroupId(), selLayout.isPrivateLayout(), LayoutConstants.DEFAULT_PARENT_LAYOUT_ID);
 		}
@@ -159,8 +174,9 @@ private void _buildNavigation(Layout rootLayout, Layout selLayout, List<Layout> 
 			}
 
 			if ((selLayout.getLayoutId() == childLayout.getLayoutId()) &&
+				(selLayout.isPublicLayout() == childLayout.isPublicLayout()) &&
 				(childLayout.getGroupId() == themeDisplay.getScopeGroupId()) ) {
-				className += "selected ";
+				className += "selected layoutId" + childLayout.getLayoutId() + " ";
 			}
 
 			sb.append("<li ");
@@ -212,30 +228,29 @@ private void _buildNavigation(Layout rootLayout, Layout selLayout, List<Layout> 
 }
 
 
-public LinkedList<Layout> getLayouts(final long scopeGroupId,
+public LinkedList<Layout> getLayouts(final long scopeGroupId, final boolean isPublic,
 		long companyId) throws PortalException, SystemException {
-	try {
+	LinkedList<Layout> layouts = new LinkedList<Layout>();
 		ExpandoTable table = ExpandoTableLocalServiceUtil.getDefaultTable(
 			 	companyId, Group.class.getName());
 		long tableId = table.getTableId();
-	
-		ExpandoColumn column = ExpandoColumnLocalServiceUtil.getColumn(tableId, "customNavigationSites");
+		final String columnName = isPublic ? "customNavigationSitesPublic" : "customNavigationSitesPrivate";
+		ExpandoColumn column = ExpandoColumnLocalServiceUtil.getColumn(tableId, columnName);
 		ExpandoValue value = ExpandoValueLocalServiceUtil.getValue(column.getTableId(), column.getColumnId(), scopeGroupId);
-		String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
-		List<GroupConfig> decodedGroups = decode(groupIds);
-		LinkedList<Layout> layouts = new LinkedList<Layout>();
-		if((decodedGroups.size() > 1 )) { 
-			for(GroupConfig groupConfig:decodedGroups) {
-				layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
+		if(value != null) {
+			String[] groupIds = StringUtil.splitLines(value.getStringArray()[0]);
+			List<GroupConfig> decodedGroups = decode(groupIds);
+			if((decodedGroups.size() > 1 )) { 
+				for(GroupConfig groupConfig:decodedGroups) {
+					layouts.addAll(LayoutServiceUtil.getLayouts(groupConfig.getGroupId(), groupConfig.isPrivate(), 0L)); // toplevel pages (0L)
+				}
 			}
-		} 
-		return layouts;
-	} catch(Exception e) {
-		// sorry, eating the exception here
-		e.printStackTrace();
-		return new LinkedList<Layout>();
-	}
+		}
+	return layouts;
 }
+
+// Code taken from ConfigurationUtil - as that class can't be used from a
+// JSP running in portal class loader. 
 
 public List<GroupConfig> decode(String[] strings) {
 	int elements = strings == null? 0 : strings.length;
@@ -265,6 +280,9 @@ private GroupConfig decode(String string) {
 	}
 	return null;
 }
+
+// code taken from GroupConfig class as that class can't be used from
+// a JSP running in portal classloader
 
 public class GroupConfig {
 
