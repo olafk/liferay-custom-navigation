@@ -7,7 +7,6 @@ import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.model.Layout;
 import com.liferay.portal.theme.ThemeDisplay;
-import com.liferay.portlet.expando.NoSuchValueException;
 
 import java.util.LinkedList;
 
@@ -24,21 +23,18 @@ public class CustomNavigationPreAction extends Action {
 			ThemeDisplay themeDisplay = (ThemeDisplay) request.getAttribute(WebKeys.THEME_DISPLAY);
 			final long scopeGroupId = themeDisplay.getScopeGroupId();
 			long companyId = themeDisplay.getCompanyId();
-
-			try {
-				LinkedList<Layout> layouts = ExpandoNavigationUtil.getLayouts(scopeGroupId, companyId);
-				if(! layouts.isEmpty()) {
-					themeDisplay.setLayouts(layouts);
-				}
-			} catch (NoSuchValueException e) {
-				// fine - don't do any special treatment
+			Layout layout = themeDisplay.getLayout();
+			LinkedList<Layout> layouts = ExpandoNavigationUtil.getLayouts(
+					scopeGroupId, layout.isPublicLayout(), companyId);
+			if(! layouts.isEmpty()) {
+				themeDisplay.setLayouts(layouts);
 			}
 		} catch (PortalException e1) {
 			e1.printStackTrace();
 		} catch (SystemException e1) {
 			e1.printStackTrace();
 		} catch (Exception ignore) {
-			System.err.println(ignore.getClass().getName());
+			System.err.println("CustomNavigationPreAction: ignoring " + ignore.getClass().getName());
 		}
 	}
 
