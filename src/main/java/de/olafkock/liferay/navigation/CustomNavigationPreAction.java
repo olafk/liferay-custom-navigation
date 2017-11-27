@@ -1,7 +1,5 @@
 package de.olafkock.liferay.navigation;
 
-import com.liferay.expando.kernel.exception.DuplicateColumnNameException;
-import com.liferay.expando.kernel.exception.DuplicateTableNameException;
 import com.liferay.expando.kernel.model.ExpandoColumn;
 import com.liferay.expando.kernel.model.ExpandoColumnConstants;
 import com.liferay.expando.kernel.model.ExpandoTable;
@@ -85,26 +83,26 @@ public class CustomNavigationPreAction extends Action {
 	private ExpandoTable getGroupExpandoTable(long companyId)
 			throws PortalException, SystemException {
 		ExpandoTable table = null;
-	
-		try {
-		 	table = expandoTableLocalService.addDefaultTable(
+		table = expandoTableLocalService.getDefaultTable(
 			 	companyId, Group.class.getName());
-		}
-		catch(DuplicateTableNameException dtne) {
-		 	table = expandoTableLocalService.getDefaultTable(
+		if(table == null) {
+		 	table = expandoTableLocalService.addDefaultTable(
 			 	companyId, Group.class.getName());
 		}
 		return table;
 	}
 
 	
-	public ExpandoColumn getNavigationColumn(boolean publicLayouts, long companyId) throws PortalException, SystemException {
+	private ExpandoColumn getNavigationColumn(boolean publicLayouts, long companyId) throws PortalException, SystemException {
 		long tableId = getGroupExpandoTable(companyId).getTableId();
 		String name = publicLayouts ? 
 				CustomNavigationKeys.PUBLIC_GROUP_IDS : 
 				CustomNavigationKeys.PRIVATE_GROUP_IDS;
-		try {
-			ExpandoColumn column = expandoColumnLocalService.addColumn(
+
+		ExpandoColumn column = expandoColumnLocalService.getColumn(tableId, name);
+
+		if(column == null) {
+			column = expandoColumnLocalService.addColumn(
 				tableId, name, ExpandoColumnConstants.STRING_ARRAY);
 		
 			// Add Unicode Properties
@@ -115,12 +113,8 @@ public class CustomNavigationPreAction extends Action {
 			column.setTypeSettingsProperties(properties);
 			column.setDefaultData("unconfigured");
 			expandoColumnLocalService.updateExpandoColumn(column);
-			return column;
 		}
-		catch(DuplicateColumnNameException dcne) {
-			return expandoColumnLocalService.getColumn(
-					tableId, name);
-		}
+		return column;
 	}
 
 	@Reference
@@ -133,5 +127,4 @@ public class CustomNavigationPreAction extends Action {
 	private ExpandoColumnLocalService expandoColumnLocalService;
 	@Reference
 	private ExpandoValueLocalService expandoValueLocalService;
-
 }

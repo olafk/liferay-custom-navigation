@@ -20,19 +20,23 @@ public class ConfigurationUtil {
 	}
 
 	private static GroupConfig decode(String string) {
-		String[] split = StringUtil.split(string);
-		
-		if(split == null || split.length!=2) {
-			return null;
-		}
-		long groupId = Long.valueOf(split[0]);
-		if(groupId == 0) {
-			return null;
-		}
-		if(split[1].equals("public")) {
-			return new GroupConfig(groupId, false);
-		} else if(split[1].equals("private")) {
-			return new GroupConfig(groupId, true);
+		try {
+			String[] split = StringUtil.split(string);
+			
+			if(split == null || split.length!=2) {
+				return null;
+			}
+			long groupId = Long.valueOf(split[0]);
+			if(groupId == 0) {
+				return null;
+			}
+			if(split[1].equals("public")) {
+				return new GroupConfig(groupId, false);
+			} else if(split[1].equals("private")) {
+				return new GroupConfig(groupId, true);
+			}
+		} catch (Exception ignore) {
+			// ignore
 		}
 		return null;
 	}
